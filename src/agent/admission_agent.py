@@ -91,7 +91,13 @@ Action: get_subject_combination({{"ma_to_hop": "A00"}})
                 latency_ms=result.get("latency_ms", 0),
             )
 
-            logger.log_event("LLM_RESPONSE", {"step": steps + 1, "response": response_text[:300]})
+            # Log toàn bộ response để trace đầy đủ vào file
+            logger.log_event("LLM_RESPONSE", {"step": steps + 1, "response": response_text})
+
+            # Tách và log riêng phần Thought để dễ đọc trên console
+            thought_match = re.search(r"Thought:\s*(.+?)(?=\nAction:|\nFinal Answer:|$)", response_text, re.DOTALL)
+            if thought_match:
+                logger.log_event("THOUGHT", {"step": steps + 1, "thought": thought_match.group(1).strip()})
 
             # 2. Kiểm tra Final Answer
             if "Final Answer:" in response_text:
@@ -102,8 +108,11 @@ Action: get_subject_combination({{"ma_to_hop": "A00"}})
             # 3. Parse Action
             action_match = re.search(r"Action:\s*(\w+)\((.+?)\)\s*$", response_text, re.MULTILINE | re.DOTALL)
             if not action_match:
-                # LLM không ra Action — thử khai thác Thought hoặc kết thúc
-                logger.log_event("PARSE_ERROR", {"step": steps + 1, "response": response_text[:200]})
+                logger.log_event("PARSE_ERROR", {
+                    "step": steps + 1,
+                    "reason": "Không tìm thấy Action hợp lệ trong response",
+                    "response": response_text,
+                })
                 conversation += f"\n{response_text}\nObservation: Không nhận được Action hợp lệ. Hãy tiếp tục hoặc đưa ra Final Answer."
                 steps += 1
                 continue
@@ -114,16 +123,27 @@ Action: get_subject_combination({{"ma_to_hop": "A00"}})
             # 4. Parse arguments JSON
             try:
                 args = json.loads(raw_args)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.log_event("JSON_ERROR", {
+                    "step": steps + 1,
+                    "tool": tool_name,
+                    "raw_args": raw_args,
+                    "error": str(e),
+                })
                 observation = f"Lỗi: tham số không phải JSON hợp lệ: {raw_args}"
-                logger.log_event("TOOL_ERROR", {"tool": tool_name, "raw_args": raw_args})
                 conversation += f"\n{response_text}\nObservation: {observation}"
                 steps += 1
                 continue
 
             # 5. Thực thi tool
             observation = self._execute_tool(tool_name, args)
-            logger.log_event("TOOL_CALL", {"tool": tool_name, "args": args, "observation_length": len(observation)})
+            logger.log_event("TOOL_CALL", {
+                "step": steps + 1,
+                "tool": tool_name,
+                "args": args,
+                "observation": observation,          # full observation vào file
+                "observation_length": len(observation),
+            })
 
             # 6. Thêm vào lịch sử hội thoại
             conversation += f"\n{response_text}\nObservation: {observation}"
@@ -154,13 +174,29 @@ Action: get_subject_combination({{"ma_to_hop": "A00"}})
         }
 
         if tool_name not in tool_map:
+            logger.log_event("TOOL_NOT_FOUND", {
+                "tool_called": tool_name,
+                "available_tools": list(tool_map.keys()),
+            })
             return f"Lỗi: Tool '{tool_name}' không tồn tại. Tool hợp lệ: {list(tool_map.keys())}"
 
         try:
             return tool_map[tool_name](args)
         except KeyError as e:
+            logger.log_event("TOOL_ERROR", {
+                "tool": tool_name,
+                "error_type": "missing_argument",
+                "missing_key": str(e),
+                "args_received": args,
+            })
             return f"Lỗi: thiếu tham số bắt buộc {e} cho tool '{tool_name}'."
         except Exception as e:
+            logger.log_event("TOOL_ERROR", {
+                "tool": tool_name,
+                "error_type": type(e).__name__,
+                "error": str(e),
+                "args_received": args,
+            })
             return f"Lỗi khi thực thi tool '{tool_name}': {str(e)}"
 
     # ------------------------------------------------------------------

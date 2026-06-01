@@ -1,212 +1,225 @@
-import os
-import re
 import json
-from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
+import os
+from typing import List, Dict, Any
 
-from src.core.llm_provider import LLMProvider
-from src.tools.admission_tools import (
-    get_subject_combination,
-    search_eligible_programs,
-    filter_programs_by_schools,
-    ADMISSION_TOOLS,
-)
-from src.telemetry.logger import logger
-from src.telemetry.metrics import tracker
-
-load_dotenv()
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+DIEM_CHUAN_PATH = os.path.join(DATA_DIR, "diem_chuan.json")
+TO_HOP_PATH = os.path.join(DATA_DIR, "to_hop_mon.json")
 
 
-class AdmissionReActAgent:
+def _load_diem_chuan() -> List[Dict]:
+    with open(DIEM_CHUAN_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _load_to_hop() -> Dict:
+    with open(TO_HOP_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get_subject_combination(ma_to_hop: str) -> str:
     """
-    ReAct Agent tư vấn tuyển sinh đại học.
-    Thực hiện vòng lặp Thought → Action → Observation cho đến khi có Final Answer.
+    Tra cứu các môn thi trong một tổ hợp xét tuyển.
+    Args:
+        ma_to_hop: Mã tổ hợp (vd: A00, D01, B00)
+    Returns:
+        Chuỗi mô tả các môn thi của tổ hợp đó.
     """
+    to_hop_data = _load_to_hop()
+    ma_to_hop = ma_to_hop.strip().upper()
+    if ma_to_hop in to_hop_data:
+        mon_thi = ", ".join(to_hop_data[ma_to_hop])
+        return f"Tổ hợp {ma_to_hop} gồm các môn: {mon_thi}."
+    return f"Không tìm thấy tổ hợp '{ma_to_hop}'. Các tổ hợp hợp lệ: {', '.join(to_hop_data.keys())}."
 
-    def __init__(self, llm: LLMProvider, max_steps: int = 6):
-        self.llm = llm
-        self.max_steps = max_steps
-        self.tools = ADMISSION_TOOLS
 
-    # ------------------------------------------------------------------
-    # System prompt
-    # ------------------------------------------------------------------
+def search_eligible_programs(to_hop: str, diem_thi: float, phuong_thuc: str = "THPT") -> str:
+    """
+    Tìm tất cả ngành/trường có điểm chuẩn năm trước thấp hơn hoặc bằng điểm thi của người dùng.
+    Args:
+        to_hop: Mã tổ hợp xét tuyển (vd: A00, D01)
+        diem_thi: Điểm thi THPT của người dùng (thang điểm 30)
+        phuong_thuc: Phương thức xét tuyển, mặc định là THPT
+    Returns:
+        Danh sách các ngành phù hợp dạng chuỗi JSON.
+    """
+    records = _load_diem_chuan()
+    to_hop = to_hop.strip().upper()
+    results = []
 
-    def get_system_prompt(self) -> str:
-        tool_descriptions = "\n".join(
-            [f"- {t['name']}: {t['description']}" for t in self.tools]
-        )
-        return f"""Bạn là một chuyên gia tư vấn tuyển sinh đại học tại Việt Nam.
-Bạn có quyền truy cập các công cụ sau để tra cứu thông tin:
-
-{tool_descriptions}
-
-Quy tắc bắt buộc:
-1. Luôn suy nghĩ trước khi hành động (Thought).
-2. Gọi đúng 1 công cụ mỗi bước (Action).
-3. Đọc kết quả công cụ (Observation) rồi tiếp tục suy nghĩ.
-4. Khi đã có đủ thông tin, đưa ra Final Answer chi tiết bằng tiếng Việt.
-5. KHÔNG được bịa số liệu — chỉ dùng dữ liệu từ Observation.
-
-Định dạng bắt buộc:
-
-Thought: <lý do bạn làm gì tiếp theo>
-Action: <tên_tool>(<tham số JSON hợp lệ>)
-Observation: <kết quả tool — hệ thống điền vào>
-... (lặp lại nếu cần)
-Final Answer: <câu trả lời đầy đủ, có phân tích và lời khuyên>
-
-Ví dụ Action hợp lệ:
-Action: search_eligible_programs({{"to_hop": "A00", "diem_thi": 26.5}})
-Action: filter_programs_by_schools({{"to_hop": "A00", "diem_thi": 26.5, "danh_sach_truong": ["BKA", "NEU"]}})
-Action: get_subject_combination({{"ma_to_hop": "A00"}})
-"""
-
-    # ------------------------------------------------------------------
-    # Main ReAct loop
-    # ------------------------------------------------------------------
-
-    def run(self, user_input: str) -> str:
-        logger.log_event("AGENT_START", {"input": user_input, "model": self.llm.model_name})
-
-        # Lịch sử hội thoại tích lũy qua từng bước
-        conversation = user_input
-        steps = 0
-        total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-
-        while steps < self.max_steps:
-            logger.log_event("AGENT_STEP", {"step": steps + 1, "prompt_length": len(conversation)})
-
-            # 1. Gọi LLM
-            result = self.llm.generate(conversation, system_prompt=self.get_system_prompt())
-            response_text = result["content"]
-
-            # Ghi metrics
-            for k in total_usage:
-                total_usage[k] += result.get("usage", {}).get(k, 0)
-            tracker.track_request(
-                provider=result.get("provider", "local"),
-                model=self.llm.model_name,
-                usage=result.get("usage", {}),
-                latency_ms=result.get("latency_ms", 0),
-            )
-
-            # Log toàn bộ response để trace đầy đủ vào file
-            logger.log_event("LLM_RESPONSE", {"step": steps + 1, "response": response_text})
-
-            # Tách và log riêng phần Thought để dễ đọc trên console
-            thought_match = re.search(r"Thought:\s*(.+?)(?=\nAction:|\nFinal Answer:|$)", response_text, re.DOTALL)
-            if thought_match:
-                logger.log_event("THOUGHT", {"step": steps + 1, "thought": thought_match.group(1).strip()})
-
-            # 2. Kiểm tra Final Answer
-            if "Final Answer:" in response_text:
-                final = response_text.split("Final Answer:", 1)[1].strip()
-                logger.log_event("AGENT_END", {"steps": steps + 1, "usage": total_usage, "status": "success"})
-                return final
-
-            # 3. Parse Action
-            action_match = re.search(r"Action:\s*(\w+)\((.+?)\)\s*$", response_text, re.MULTILINE | re.DOTALL)
-            if not action_match:
-                logger.log_event("PARSE_ERROR", {
-                    "step": steps + 1,
-                    "reason": "Không tìm thấy Action hợp lệ trong response",
-                    "response": response_text,
-                })
-                conversation += f"\n{response_text}\nObservation: Không nhận được Action hợp lệ. Hãy tiếp tục hoặc đưa ra Final Answer."
-                steps += 1
-                continue
-
-            tool_name = action_match.group(1).strip()
-            raw_args = action_match.group(2).strip()
-
-            # 4. Parse arguments JSON
-            try:
-                args = json.loads(raw_args)
-            except json.JSONDecodeError as e:
-                logger.log_event("JSON_ERROR", {
-                    "step": steps + 1,
-                    "tool": tool_name,
-                    "raw_args": raw_args,
-                    "error": str(e),
-                })
-                observation = f"Lỗi: tham số không phải JSON hợp lệ: {raw_args}"
-                conversation += f"\n{response_text}\nObservation: {observation}"
-                steps += 1
-                continue
-
-            # 5. Thực thi tool
-            observation = self._execute_tool(tool_name, args)
-            logger.log_event("TOOL_CALL", {
-                "step": steps + 1,
-                "tool": tool_name,
-                "args": args,
-                "observation": observation,          # full observation vào file
-                "observation_length": len(observation),
+    for r in records:
+        if r.get("phuong_thuc") != phuong_thuc:
+            continue
+        if to_hop not in r.get("to_hop", []):
+            continue
+        diem_chuan = r.get("diem_chuan_2024", 999)
+        if diem_thi >= diem_chuan:
+            results.append({
+                "truong": r["ten_truong"],
+                "ma_truong": r["ma_truong"],
+                "nganh": r["ten_nganh"],
+                "diem_chuan_2024": diem_chuan,
+                "chenh_lech": round(diem_thi - diem_chuan, 2)
             })
 
-            # 6. Thêm vào lịch sử hội thoại
-            conversation += f"\n{response_text}\nObservation: {observation}"
-            steps += 1
+    if not results:
+        return json.dumps({
+            "status": "not_found",
+            "message": f"Không tìm thấy ngành nào phù hợp với tổ hợp {to_hop} và điểm {diem_thi}.",
+            "results": []
+        }, ensure_ascii=False)
 
-        # Vượt max_steps
-        logger.log_event("AGENT_END", {"steps": steps, "usage": total_usage, "status": "max_steps_exceeded"})
-        return self._force_final_answer(conversation)
+    results.sort(key=lambda x: x["chenh_lech"], reverse=True)
+    return json.dumps({
+        "status": "ok",
+        "total": len(results),
+        "to_hop": to_hop,
+        "diem_thi": diem_thi,
+        "results": results
+    }, ensure_ascii=False)
+def filter_programs_by_schools(to_hop: str, diem_thi: float, danh_sach_truong: List[str], phuong_thuc: str = "THPT") -> str:
+    """
+    Lọc các ngành phù hợp theo danh sách trường mà người dùng quan tâm.
+    Args:
+        to_hop: Mã tổ hợp xét tuyển
+        diem_thi: Điểm thi THPT của người dùng
+        danh_sach_truong: Danh sách mã trường hoặc tên trường cần lọc
+        phuong_thuc: Phương thức xét tuyển, mặc định là THPT
+    Returns:
+        Danh sách ngành đã lọc theo trường, dạng chuỗi JSON.
+    """
+    records = _load_diem_chuan()
+    to_hop = to_hop.strip().upper()
+    truong_filter = [t.strip().upper() for t in danh_sach_truong]
+    results = []
 
-    # ------------------------------------------------------------------
-    # Tool executor
-    # ------------------------------------------------------------------
+    for r in records:
+        if r.get("phuong_thuc") != phuong_thuc:
+            continue
+        if to_hop not in r.get("to_hop", []):
+            continue
+        # Khớp theo mã trường hoặc tên trường (không phân biệt hoa/thường)
+        ma = r["ma_truong"].upper()
+        ten = r["ten_truong"].upper()
+        match = any(f in ma or f in ten for f in truong_filter)
+        if not match:
+            continue
+        diem_chuan = r.get("diem_chuan_2024", 999)
+        results.append({
+            "truong": r["ten_truong"],
+            "ma_truong": r["ma_truong"],
+            "nganh": r["ten_nganh"],
+            "diem_chuan_2024": diem_chuan,
+            "kha_nang": "Đậu" if diem_thi >= diem_chuan else "Rủi ro cao",
+            "chenh_lech": round(diem_thi - diem_chuan, 2)
+        })
 
-    def _execute_tool(self, tool_name: str, args: Dict[str, Any]) -> str:
-        tool_map = {
-            "get_subject_combination": lambda a: get_subject_combination(a["ma_to_hop"]),
-            "search_eligible_programs": lambda a: search_eligible_programs(
-                to_hop=a["to_hop"],
-                diem_thi=float(a["diem_thi"]),
-                phuong_thuc=a.get("phuong_thuc", "THPT"),
-            ),
-            "filter_programs_by_schools": lambda a: filter_programs_by_schools(
-                to_hop=a["to_hop"],
-                diem_thi=float(a["diem_thi"]),
-                danh_sach_truong=a["danh_sach_truong"],
-                phuong_thuc=a.get("phuong_thuc", "THPT"),
-            ),
-        }
+    if not results:
+        return json.dumps({
+            "status": "not_found",
+            "message": f"Không tìm thấy ngành nào trong danh sách trường đã chọn với tổ hợp {to_hop}.",
+            "results": []
+        }, ensure_ascii=False)
 
-        if tool_name not in tool_map:
-            logger.log_event("TOOL_NOT_FOUND", {
-                "tool_called": tool_name,
-                "available_tools": list(tool_map.keys()),
-            })
-            return f"Lỗi: Tool '{tool_name}' không tồn tại. Tool hợp lệ: {list(tool_map.keys())}"
+    results.sort(key=lambda x: x["chenh_lech"], reverse=True)
+    return json.dumps({
+        "status": "ok",
+        "total": len(results),
+        "to_hop": to_hop,
+        "diem_thi": diem_thi,
+        "results": results
+    }, ensure_ascii=False)
 
-        try:
-            return tool_map[tool_name](args)
-        except KeyError as e:
-            logger.log_event("TOOL_ERROR", {
-                "tool": tool_name,
-                "error_type": "missing_argument",
-                "missing_key": str(e),
-                "args_received": args,
-            })
-            return f"Lỗi: thiếu tham số bắt buộc {e} cho tool '{tool_name}'."
-        except Exception as e:
-            logger.log_event("TOOL_ERROR", {
-                "tool": tool_name,
-                "error_type": type(e).__name__,
-                "error": str(e),
-                "args_received": args,
-            })
-            return f"Lỗi khi thực thi tool '{tool_name}': {str(e)}"
 
-    # ------------------------------------------------------------------
-    # Fallback khi vượt max_steps
-    # ------------------------------------------------------------------
+def suggest_top_programs(to_hop: str, diem_thi: float, top_n: int = 5,
+                         nganh_quan_tam: List[str] = None, phuong_thuc: str = "THPT") -> str:
+    """
+    Gợi ý top N ngành/trường phù hợp nhất khi người dùng chưa có trường cụ thể.
+    Ưu tiên: (1) an toàn vừa phải (chênh lệch 0.5–3 điểm), (2) khớp ngành quan tâm nếu có.
+    Args:
+        to_hop: Mã tổ hợp xét tuyển
+        diem_thi: Điểm thi THPT của người dùng
+        top_n: Số lượng gợi ý trả về (mặc định 5)
+        nganh_quan_tam: Danh sách từ khóa ngành quan tâm để ưu tiên, [] nếu không có
+        phuong_thuc: Phương thức xét tuyển, mặc định là THPT
+    Returns:
+        Top N ngành gợi ý dạng chuỗi JSON.
+    """
+    records = _load_diem_chuan()
+    to_hop = to_hop.strip().upper()
+    nganh_keywords = [n.strip().lower() for n in (nganh_quan_tam or [])]
+    candidates = []
 
-    def _force_final_answer(self, conversation: str) -> str:
-        prompt = conversation + "\n\nDựa trên các thông tin đã thu thập ở trên, hãy đưa ra Final Answer chi tiết ngay bây giờ."
-        result = self.llm.generate(prompt, system_prompt=self.get_system_prompt())
-        text = result["content"]
-        if "Final Answer:" in text:
-            return text.split("Final Answer:", 1)[1].strip()
-        return text.strip()
+    for r in records:
+        if r.get("phuong_thuc") != phuong_thuc:
+            continue
+        if to_hop not in r.get("to_hop", []):
+            continue
+        diem_chuan = r.get("diem_chuan_2024", 999)
+        chenh_lech = round(diem_thi - diem_chuan, 2)
+        if chenh_lech < 0:
+            continue
+
+        # Tính điểm ưu tiên: thích khoảng an toàn vừa (0.5–3đ), không quá dễ
+        safety_score = chenh_lech if chenh_lech <= 3 else max(0, 6 - chenh_lech)
+
+        # Cộng thêm điểm nếu khớp ngành quan tâm
+        nganh_lower = r["ten_nganh"].lower()
+        nganh_bonus = 5 if any(k in nganh_lower for k in nganh_keywords) else 0
+
+        candidates.append({
+            "truong": r["ten_truong"],
+            "ma_truong": r["ma_truong"],
+            "nganh": r["ten_nganh"],
+            "diem_chuan_2024": diem_chuan,
+            "chenh_lech": chenh_lech,
+            "kha_nang": "An toàn" if chenh_lech >= 1 else "Vừa đủ",
+            "_score": safety_score + nganh_bonus,
+        })
+
+    if not candidates:
+        return json.dumps({
+            "status": "not_found",
+            "message": f"Không tìm thấy ngành nào phù hợp với tổ hợp {to_hop} và điểm {diem_thi}.",
+            "results": []
+        }, ensure_ascii=False)
+
+    candidates.sort(key=lambda x: x["_score"], reverse=True)
+    top = candidates[:top_n]
+    for r in top:
+        del r["_score"]
+
+    return json.dumps({
+        "status": "ok",
+        "total_eligible": len(candidates),
+        "top_n": top_n,
+        "to_hop": to_hop,
+        "diem_thi": diem_thi,
+        "note": "Đây là gợi ý khi chưa có trường cụ thể. Ưu tiên ngành an toàn và khớp sở thích.",
+        "results": top
+    }, ensure_ascii=False)
+
+
+# Tool registry dùng cho ReAct agent
+ADMISSION_TOOLS = [
+    {
+        "name": "get_subject_combination",
+        "description": "Tra cứu các môn thi trong một tổ hợp xét tuyển. Dùng khi cần biết tổ hợp gồm những môn gì. Input: ma_to_hop (string, vd: 'A00').",
+        "func": get_subject_combination,
+    },
+    {
+        "name": "search_eligible_programs",
+        "description": "Tìm tất cả ngành/trường có điểm chuẩn năm trước thấp hơn hoặc bằng điểm thi của người dùng. Input: to_hop (string), diem_thi (float), phuong_thuc (string, mặc định 'THPT').",
+        "func": lambda args: search_eligible_programs(**args) if isinstance(args, dict) else search_eligible_programs(*args.split(",")),
+    },
+    {
+        "name": "filter_programs_by_schools",
+        "description": "Lọc các ngành phù hợp theo danh sách trường mà người dùng quan tâm. Input: to_hop (string), diem_thi (float), danh_sach_truong (list of string), phuong_thuc (string, mặc định 'THPT').",
+        "func": lambda args: filter_programs_by_schools(**args) if isinstance(args, dict) else "Cần truyền dict arguments.",
+    },
+    {
+        "name": "suggest_top_programs",
+        "description": "Gợi ý top 5 ngành/trường phù hợp nhất khi người dùng CHƯA có trường cụ thể. Ưu tiên ngành an toàn và khớp sở thích. Input: to_hop (string), diem_thi (float), nganh_quan_tam (list of string, [] nếu không có), top_n (int, mặc định 5).",
+        "func": lambda args: suggest_top_programs(**args) if isinstance(args, dict) else "Cần truyền dict arguments.",
+    },
+]

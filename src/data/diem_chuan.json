@@ -1,0 +1,362 @@
+[
+  {
+    "ma_truong": "BKA",
+    "ten_truong": "Đại học Bách khoa Hà Nội",
+    "ten_nganh": "Khoa học Máy tính",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 28.53,
+    "diem_chuan_2025": 28.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "BKA",
+    "ten_truong": "Đại học Bách khoa Hà Nội",
+    "ten_nganh": "Kỹ thuật Điện tử - Viễn thông",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 27.02,
+    "diem_chuan_2025": 27.35,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "BKA",
+    "ten_truong": "Đại học Bách khoa Hà Nội",
+    "ten_nganh": "Kỹ thuật Cơ điện tử",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 26.50,
+    "diem_chuan_2025": 26.85,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "BKA",
+    "ten_truong": "Đại học Bách khoa Hà Nội",
+    "ten_nganh": "Khoa học Máy tính",
+    "phuong_thuc": "DGTD",
+    "to_hop": [],
+    "diem_chuan_2024": 72.5,
+    "diem_chuan_2025": 74.0,
+    "thang_diem": 100
+  },
+  {
+    "ma_truong": "QHI",
+    "ten_truong": "ĐH Công nghệ - ĐHQG Hà Nội",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 27.74,
+    "diem_chuan_2025": 28.00,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "QHI",
+    "ten_truong": "ĐH Công nghệ - ĐHQG Hà Nội",
+    "ten_nganh": "Trí tuệ nhân tạo",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 28.10,
+    "diem_chuan_2025": 28.50,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "QHI",
+    "ten_truong": "ĐH Công nghệ - ĐHQG Hà Nội",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "DGNL_HN",
+    "to_hop": [],
+    "diem_chuan_2024": 105,
+    "diem_chuan_2025": 108,
+    "thang_diem": 150
+  },
+  {
+    "ma_truong": "NEU",
+    "ten_truong": "Đại học Kinh tế Quốc dân",
+    "ten_nganh": "Tài chính - Ngân hàng",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 27.80,
+    "diem_chuan_2025": 28.00,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "NEU",
+    "ten_truong": "Đại học Kinh tế Quốc dân",
+    "ten_nganh": "Quản trị Kinh doanh",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 27.50,
+    "diem_chuan_2025": 27.75,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "NEU",
+    "ten_truong": "Đại học Kinh tế Quốc dân",
+    "ten_nganh": "Kế toán",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 26.85,
+    "diem_chuan_2025": 27.10,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "FTU",
+    "ten_truong": "Đại học Ngoại thương",
+    "ten_nganh": "Kinh tế Quốc tế",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01", "D01"],
+    "diem_chuan_2024": 28.00,
+    "diem_chuan_2025": 28.25,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "FTU",
+    "ten_truong": "Đại học Ngoại thương",
+    "ten_nganh": "Kinh doanh Quốc tế",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01", "D01"],
+    "diem_chuan_2024": 27.85,
+    "diem_chuan_2025": 28.10,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "FTU",
+    "ten_truong": "Đại học Ngoại thương",
+    "ten_nganh": "Kinh tế Quốc tế",
+    "phuong_thuc": "DGNL_HN",
+    "to_hop": [],
+    "diem_chuan_2024": 100,
+    "diem_chuan_2025": 103,
+    "thang_diem": 150
+  },
+  {
+    "ma_truong": "BVH",
+    "ten_truong": "Học viện Công nghệ Bưu chính Viễn thông",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01", "D07"],
+    "diem_chuan_2024": 26.50,
+    "diem_chuan_2025": 26.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "BVH",
+    "ten_truong": "Học viện Công nghệ Bưu chính Viễn thông",
+    "ten_nganh": "An toàn thông tin",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 26.00,
+    "diem_chuan_2025": 26.30,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "BVH",
+    "ten_truong": "Học viện Công nghệ Bưu chính Viễn thông",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "HOC_BA",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 27.00,
+    "diem_chuan_2025": 27.20,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "NHH",
+    "ten_truong": "Học viện Ngân hàng",
+    "ten_nganh": "Tài chính - Ngân hàng",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 26.25,
+    "diem_chuan_2025": 26.50,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "NHH",
+    "ten_truong": "Học viện Ngân hàng",
+    "ten_nganh": "Kế toán",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 25.50,
+    "diem_chuan_2025": 25.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "HTC",
+    "ten_truong": "Học viện Tài chính",
+    "ten_nganh": "Tài chính công",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 25.75,
+    "diem_chuan_2025": 26.00,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "HTC",
+    "ten_truong": "Học viện Tài chính",
+    "ten_nganh": "Kế toán",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 25.50,
+    "diem_chuan_2025": 25.70,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "DCT",
+    "ten_truong": "Đại học Thương mại",
+    "ten_nganh": "Marketing",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 26.50,
+    "diem_chuan_2025": 26.75,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "DCT",
+    "ten_truong": "Đại học Thương mại",
+    "ten_nganh": "Quản trị Kinh doanh",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 26.00,
+    "diem_chuan_2025": 26.30,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "SPH",
+    "ten_truong": "Đại học Sư phạm Hà Nội",
+    "ten_nganh": "Sư phạm Toán học",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00"],
+    "diem_chuan_2024": 26.00,
+    "diem_chuan_2025": 26.50,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "SPH",
+    "ten_truong": "Đại học Sư phạm Hà Nội",
+    "ten_nganh": "Sư phạm Ngữ văn",
+    "phuong_thuc": "THPT",
+    "to_hop": ["C00", "D14"],
+    "diem_chuan_2024": 25.50,
+    "diem_chuan_2025": 25.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "YHN",
+    "ten_truong": "Đại học Y Hà Nội",
+    "ten_nganh": "Y khoa",
+    "phuong_thuc": "THPT",
+    "to_hop": ["B00"],
+    "diem_chuan_2024": 27.50,
+    "diem_chuan_2025": 27.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "YHN",
+    "ten_truong": "Đại học Y Hà Nội",
+    "ten_nganh": "Răng - Hàm - Mặt",
+    "phuong_thuc": "THPT",
+    "to_hop": ["B00"],
+    "diem_chuan_2024": 27.00,
+    "diem_chuan_2025": 27.30,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "XDA",
+    "ten_truong": "Đại học Xây dựng Hà Nội",
+    "ten_nganh": "Kỹ thuật Xây dựng",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 22.50,
+    "diem_chuan_2025": 22.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "XDA",
+    "ten_truong": "Đại học Xây dựng Hà Nội",
+    "ten_nganh": "Kiến trúc",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00"],
+    "diem_chuan_2024": 24.00,
+    "diem_chuan_2025": 24.30,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "GTA",
+    "ten_truong": "Đại học Giao thông Vận tải",
+    "ten_nganh": "Kỹ thuật Ô tô",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 24.50,
+    "diem_chuan_2025": 24.80,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "GTA",
+    "ten_truong": "Đại học Giao thông Vận tải",
+    "ten_nganh": "Logistics",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 25.00,
+    "diem_chuan_2025": 25.30,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "LHN",
+    "ten_truong": "Đại học Luật Hà Nội",
+    "ten_nganh": "Luật",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "C00", "D01"],
+    "diem_chuan_2024": 26.80,
+    "diem_chuan_2025": 27.00,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "LHN",
+    "ten_truong": "Đại học Luật Hà Nội",
+    "ten_nganh": "Luật Kinh tế",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 27.20,
+    "diem_chuan_2025": 27.40,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "HCI",
+    "ten_truong": "Đại học Công nghiệp Hà Nội",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01", "D01"],
+    "diem_chuan_2024": 24.00,
+    "diem_chuan_2025": 24.50,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "HCI",
+    "ten_truong": "Đại học Công nghiệp Hà Nội",
+    "ten_nganh": "Kế toán",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "D01"],
+    "diem_chuan_2024": 22.00,
+    "diem_chuan_2025": 22.50,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "TLU",
+    "ten_truong": "Đại học Thủy lợi",
+    "ten_nganh": "Kỹ thuật Tài nguyên nước",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 20.50,
+    "diem_chuan_2025": 21.00,
+    "thang_diem": 30
+  },
+  {
+    "ma_truong": "TLU",
+    "ten_truong": "Đại học Thủy lợi",
+    "ten_nganh": "Công nghệ thông tin",
+    "phuong_thuc": "THPT",
+    "to_hop": ["A00", "A01"],
+    "diem_chuan_2024": 23.50,
+    "diem_chuan_2025": 24.00,
+    "thang_diem": 30
+  }
+]

@@ -1,663 +1,395 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tư vấn Tuyển sinh ĐH — AI Agent</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tư vấn Tuyển sinh ĐH — AI Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      :root {
-        --primary: #1a56db;
-        --primary-dark: #1240a8;
-        --success: #057a55;
-        --warning: #c27803;
-        --danger: #c81e1e;
-        --bg: #f3f4f6;
-        --card: #ffffff;
-        --border: #e5e7eb;
-        --text: #111827;
-        --muted: #6b7280;
-        --radius: 12px;
-      }
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1240a8;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+    }
 
-      body {
-        font-family: "Segoe UI", system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-      }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-      /* ---- Header ---- */
-      header {
-        background: linear-gradient(135deg, #1a56db 0%, #0e3fa6 100%);
-        color: #fff;
-        padding: 20px 32px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-      }
-      header .logo {
-        font-size: 2rem;
-      }
-      header h1 {
-        font-size: 1.35rem;
-        font-weight: 700;
-      }
-      header p {
-        font-size: 0.85rem;
-        opacity: 0.85;
-        margin-top: 2px;
-      }
+    /* ---- Header ---- */
+    header {
+      background: linear-gradient(135deg, #1a56db 0%, #0e3fa6 100%);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      flex-shrink: 0;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-left h1 { font-size: 1.1rem; font-weight: 700; }
+    .header-left p  { font-size: .78rem; opacity: .8; margin-top: 2px; }
 
-      /* ---- Layout ---- */
-      .layout {
-        max-width: 1100px;
-        margin: 32px auto;
-        padding: 0 20px;
-        display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 24px;
-        align-items: start;
-      }
+    .ctx-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pill {
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
 
-      /* ---- Card ---- */
-      .card {
-        background: var(--card);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
-        padding: 24px;
-      }
-      .card h2 {
-        font-size: 1rem;
-        font-weight: 700;
-        margin-bottom: 18px;
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    .btn-reset {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    .btn-reset:hover { background: rgba(255,255,255,.28); }
 
-      /* ---- Form ---- */
-      .form-group {
-        margin-bottom: 16px;
-      }
-      label {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 6px;
-        color: #374151;
-      }
-      select,
-      input[type="number"] {
-        width: 100%;
-        padding: 9px 12px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 0.9rem;
-        color: var(--text);
-        background: #fff;
-        outline: none;
-        transition: border-color 0.2s;
-      }
-      select:focus,
-      input:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
-      }
+    /* ---- Chat area ---- */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+    }
 
-      .score-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .score-row input {
-        flex: 1;
-      }
-      .score-badge {
-        background: var(--primary);
-        color: #fff;
-        border-radius: 6px;
-        padding: 6px 11px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        white-space: nowrap;
-      }
+    .welcome {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--muted);
+    }
+    .welcome .icon { font-size: 3rem; margin-bottom: 12px; }
+    .welcome h2 { font-size: 1.2rem; color: var(--text); margin-bottom: 8px; }
+    .welcome p  { font-size: .9rem; line-height: 1.6; }
+    .welcome .examples {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .example-chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      max-width: 520px;
+      text-align: left;
+    }
+    .example-chip:hover { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
 
-      /* subjects hint */
-      .subjects-hint {
-        margin-top: 6px;
-        font-size: 0.8rem;
-        color: var(--muted);
-        background: #f9fafb;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 6px 10px;
-        min-height: 28px;
-      }
+    /* ---- Bubbles ---- */
+    .message { display: flex; gap: 10px; align-items: flex-end; }
+    .message.user { flex-direction: row-reverse; }
 
-      /* School multiselect */
-      .school-list {
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        max-height: 220px;
-        overflow-y: auto;
-        padding: 8px;
-      }
-      .school-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 8px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background 0.15s;
-        font-size: 0.88rem;
-      }
-      .school-item:hover {
-        background: #eff6ff;
-      }
-      .school-item input[type="checkbox"] {
-        accent-color: var(--primary);
-        width: 15px;
-        height: 15px;
-        flex-shrink: 0;
-      }
-      .school-item .ma {
-        color: var(--muted);
-        font-size: 0.78rem;
-        margin-left: auto;
-      }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .message.user .avatar { background: var(--primary); color: #fff; }
+    .message.bot  .avatar { background: #e5e7eb; }
 
-      .school-search {
-        width: 100%;
-        padding: 7px 10px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 0.85rem;
-        margin-bottom: 8px;
-        outline: none;
-      }
-      .school-search:focus {
-        border-color: var(--primary);
-      }
+    .bubble {
+      max-width: 72%;
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: .92rem;
+      line-height: 1.75;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .message.user .bubble {
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .message.bot .bubble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
 
-      .selected-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        min-height: 24px;
-        margin-top: 8px;
-      }
-      .tag {
-        background: #dbeafe;
-        color: var(--primary-dark);
-        border-radius: 20px;
-        padding: 3px 10px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .tag button {
-        background: none;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        font-size: 0.9rem;
-        line-height: 1;
-        padding: 0 1px;
-      }
+    /* Typing indicator */
+    .typing .bubble { display: flex; align-items: center; gap: 5px; padding: 14px 18px; }
+    .dot {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce .9s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); }
+      40%         { transform: translateY(-7px); }
+    }
 
-      /* ---- Submit ---- */
-      .btn-submit {
-        width: 100%;
-        padding: 12px;
-        background: var(--primary);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition:
-          background 0.2s,
-          transform 0.1s;
-        margin-top: 4px;
-      }
-      .btn-submit:hover {
-        background: var(--primary-dark);
-      }
-      .btn-submit:active {
-        transform: scale(0.98);
-      }
-      .btn-submit:disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-        transform: none;
-      }
+    /* ---- Input area ---- */
+    .input-area {
+      flex-shrink: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 14px 16px;
+    }
+    .input-row {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    textarea {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: .92rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 140px;
+      overflow-y: auto;
+      line-height: 1.5;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+    textarea::placeholder { color: var(--muted); }
 
-      /* ---- Result panel ---- */
-      .result-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
+    .btn-send {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, transform .1s;
+      flex-shrink: 0;
+    }
+    .btn-send:hover   { background: var(--primary-dark); }
+    .btn-send:active  { transform: scale(.94); }
+    .btn-send:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
 
-      .status-box {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 18px;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 600;
-      }
-      .status-box.idle {
-        background: #f3f4f6;
-        color: var(--muted);
-      }
-      .status-box.loading {
-        background: #eff6ff;
-        color: var(--primary);
-      }
-      .status-box.error {
-        background: #fef2f2;
-        color: var(--danger);
-      }
-      .status-box.done {
-        background: #ecfdf5;
-        color: var(--success);
-      }
+    .input-hint {
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 6px;
+      max-width: 860px;
+      margin-left: auto; margin-right: auto;
+    }
 
-      .spinner {
-        width: 18px;
-        height: 18px;
-        border: 3px solid #bfdbfe;
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      /* ---- Answer card ---- */
-      .answer-card {
-        display: none;
-      }
-      .answer-card.visible {
-        display: block;
-      }
+    .chat-container::-webkit-scrollbar { width: 5px; }
+    .chat-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  </style>
+</head>
+<body>
 
-      .answer-body {
-        font-size: 0.92rem;
-        line-height: 1.75;
-        white-space: pre-wrap;
-        word-break: break-word;
-        color: var(--text);
-      }
-
-      /* Markdown-like rendering */
-      .answer-body strong {
-        color: #111;
-      }
-
-      /* ---- Steps trace ---- */
-      .trace-toggle {
-        background: none;
-        border: none;
-        color: var(--primary);
-        font-size: 0.82rem;
-        cursor: pointer;
-        padding: 0;
-        text-decoration: underline;
-      }
-      .trace-box {
-        display: none;
-        background: #1e293b;
-        color: #94a3b8;
-        border-radius: 8px;
-        padding: 14px;
-        font-family: "Consolas", monospace;
-        font-size: 0.78rem;
-        white-space: pre-wrap;
-        max-height: 300px;
-        overflow-y: auto;
-      }
-      .trace-box.visible {
-        display: block;
-      }
-
-      /* ---- Responsive ---- */
-      @media (max-width: 768px) {
-        .layout {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div class="logo">🎓</div>
-      <div>
-        <h1>Tư vấn Tuyển sinh Đại học</h1>
-        <p>Powered by ReAct AI Agent · Dữ liệu điểm chuẩn 2024</p>
-      </div>
-    </header>
-
-    <div class="layout">
-      <!-- ===== LEFT: Input form ===== -->
-      <div class="card">
-        <h2>📋 Thông tin xét tuyển</h2>
-
-        <div class="form-group">
-          <label for="to_hop">Tổ hợp xét tuyển</label>
-          <select id="to_hop">
-            <option value="">-- Chọn tổ hợp --</option>
-          </select>
-          <div class="subjects-hint" id="subjects-hint">
-            Chọn tổ hợp để xem các môn thi
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="diem_thi">Điểm thi THPT (thang 30)</label>
-          <div class="score-row">
-            <input
-              type="number"
-              id="diem_thi"
-              min="0"
-              max="30"
-              step="0.05"
-              placeholder="Ví dụ: 26.5"
-            />
-            <span class="score-badge" id="score-badge">—</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label
-            >Trường quan tâm
-            <span style="font-weight: 400; color: var(--muted)"
-              >(bỏ trống = tìm tất cả)</span
-            ></label
-          >
-          <input
-            class="school-search"
-            id="school-search"
-            type="text"
-            placeholder="Tìm kiếm trường..."
-          />
-          <div class="school-list" id="school-list">
-            <div style="color: var(--muted); font-size: 0.85rem; padding: 6px">
-              Đang tải danh sách trường...
-            </div>
-          </div>
-          <div class="selected-tags" id="selected-tags"></div>
-        </div>
-
-        <button class="btn-submit" id="btn-submit" onclick="submitForm()">
-          🔍 Phân tích nguyện vọng
-        </button>
-      </div>
-
-      <!-- ===== RIGHT: Result ===== -->
-      <div class="result-panel">
-        <div class="status-box idle" id="status-box">
-          <span>💡</span>
-          <span>Nhập thông tin bên trái và nhấn "Phân tích nguyện vọng"</span>
-        </div>
-
-        <div class="card answer-card" id="answer-card">
-          <h2>🤖 Kết quả tư vấn từ AI Agent</h2>
-          <div class="answer-body" id="answer-body"></div>
-          <div style="margin-top: 12px">
-            <button class="trace-toggle" onclick="toggleTrace()">
-              Xem chi tiết câu hỏi gửi lên agent ▼
-            </button>
-            <div class="trace-box" id="trace-box"></div>
-          </div>
-        </div>
-      </div>
+<header>
+  <div class="header-left">
+    <span style="font-size:1.6rem">🎓</span>
+    <div>
+      <h1>Tư vấn Tuyển sinh Đại học</h1>
+      <p>ReAct AI Agent · Dữ liệu điểm chuẩn 2024</p>
     </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="ctx-pills" id="ctx-pills"></div>
+    <button class="btn-reset" onclick="resetChat()">🔄 Cuộc hội thoại mới</button>
+  </div>
+</header>
 
-    <script>
-      const API = "http://localhost:5000/api";
-      let schoolsData = [];
-      let selectedSchools = new Set();
-      let toHopData = {};
+<div class="chat-container" id="chat-container">
+  <div class="welcome" id="welcome">
+    <div class="icon">🤖</div>
+    <h2>Xin chào! Tôi là AI tư vấn tuyển sinh</h2>
+    <p>Hãy mô tả tự nhiên điểm thi, khối thi và các trường/ngành bạn quan tâm.<br>
+       Tôi sẽ hỏi thêm nếu cần và phân tích nguyện vọng phù hợp nhất cho bạn.</p>
+    <div class="examples">
+      <div class="example-chip" onclick="sendExample(this)">Tôi được 27.3 điểm khối A01, quan tâm đến Bách Khoa và Bưu chính Viễn thông</div>
+      <div class="example-chip" onclick="sendExample(this)">Mình thi A00 được 25 điểm, muốn học ngành Kinh tế hoặc Tài chính</div>
+      <div class="example-chip" onclick="sendExample(this)">Điểm B00 của tôi là 26.5, các trường Y Dược có phù hợp không?</div>
+    </div>
+  </div>
+</div>
 
-      // ------------------------------------------------------------------
-      // Init: load dữ liệu
-      // ------------------------------------------------------------------
-      async function init() {
-        try {
-          const [schoolsRes, toHopRes] = await Promise.all([
-            fetch(`${API}/schools`),
-            fetch(`${API}/to_hop`),
-          ]);
-          schoolsData = await schoolsRes.json();
-          toHopData = await toHopRes.json();
-          renderSchools(schoolsData);
-          renderToHopSelect();
-        } catch (e) {
-          document.getElementById("school-list").innerHTML =
-            `<div style="color:var(--danger);font-size:.85rem;padding:6px">Lỗi kết nối server: ${e.message}</div>`;
-        }
-      }
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="user-input" rows="1"
+      placeholder="Ví dụ: Tôi được 27.3 điểm khối A01, quan tâm đến Bách Khoa và Bưu chính..."
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="btn-send" id="btn-send" onclick="sendMessage()" title="Gửi (Enter)">&#9658;</button>
+  </div>
+  <div class="input-hint">Enter để gửi &nbsp;·&nbsp; Shift+Enter xuống dòng</div>
+</div>
 
-      function renderToHopSelect() {
-        const sel = document.getElementById("to_hop");
-        for (const [ma, mons] of Object.entries(toHopData)) {
-          const opt = document.createElement("option");
-          opt.value = ma;
-          opt.textContent = `${ma} — ${mons.join(", ")}`;
-          sel.appendChild(opt);
-        }
-      }
+<script>
+  const API = "http://localhost:5000/api";
+  let sessionId = null;
 
-      function renderSchools(list) {
-        const container = document.getElementById("school-list");
-        container.innerHTML = "";
-        if (!list.length) {
-          container.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:6px">Không có trường nào</div>`;
-          return;
-        }
-        list.forEach((s) => {
-          const item = document.createElement("label");
-          item.className = "school-item";
-          item.innerHTML = `
-        <input type="checkbox" value="${s.ma}" onchange="toggleSchool('${s.ma}','${s.ten.replace(/'/g, "\\'")}',this.checked)" ${selectedSchools.has(s.ma) ? "checked" : ""} />
-        <span>${s.ten}</span>
-        <span class="ma">${s.ma}</span>`;
-          container.appendChild(item);
-        });
-      }
+  async function initSession() {
+    try {
+      const res = await fetch(`${API}/session/new`, { method: "POST" });
+      const data = await res.json();
+      sessionId = data.session_id;
+    } catch (e) {
+      console.error("Không thể tạo session:", e);
+    }
+  }
 
-      // ------------------------------------------------------------------
-      // School search filter
-      // ------------------------------------------------------------------
-      document
-        .getElementById("school-search")
-        .addEventListener("input", function () {
-          const q = this.value.toLowerCase();
-          const filtered = schoolsData.filter(
-            (s) =>
-              s.ten.toLowerCase().includes(q) || s.ma.toLowerCase().includes(q),
-          );
-          renderSchools(filtered);
-        });
+  async function resetChat() {
+    if (sessionId) {
+      try { await fetch(`${API}/session/${sessionId}/reset`, { method: "POST" }); } catch {}
+    }
+    sessionId = null;
+    document.getElementById("chat-container").innerHTML = `
+      <div class="welcome" id="welcome">
+        <div class="icon">🤖</div>
+        <h2>Xin chào! Tôi là AI tư vấn tuyển sinh</h2>
+        <p>Hãy mô tả tự nhiên điểm thi, khối thi và các trường/ngành bạn quan tâm.<br>
+           Tôi sẽ hỏi thêm nếu cần và phân tích nguyện vọng phù hợp nhất cho bạn.</p>
+        <div class="examples">
+          <div class="example-chip" onclick="sendExample(this)">Tôi được 27.3 điểm khối A01, quan tâm đến Bách Khoa và Bưu chính Viễn thông</div>
+          <div class="example-chip" onclick="sendExample(this)">Mình thi A00 được 25 điểm, muốn học ngành Kinh tế hoặc Tài chính</div>
+          <div class="example-chip" onclick="sendExample(this)">Điểm B00 của tôi là 26.5, các trường Y Dược có phù hợp không?</div>
+        </div>
+      </div>`;
+    document.getElementById("ctx-pills").innerHTML = "";
+    await initSession();
+  }
 
-      // ------------------------------------------------------------------
-      // Tổ hợp → hiển thị môn thi
-      // ------------------------------------------------------------------
-      document.getElementById("to_hop").addEventListener("change", function () {
-        const hint = document.getElementById("subjects-hint");
-        const ma = this.value;
-        if (ma && toHopData[ma]) {
-          hint.textContent = `Môn thi: ${toHopData[ma].join(" · ")}`;
-          hint.style.color = "#1a56db";
-        } else {
-          hint.textContent = "Chọn tổ hợp để xem các môn thi";
-          hint.style.color = "";
-        }
+  function sendExample(el) { sendMessage(el.textContent.trim()); }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 140) + "px";
+  }
+
+  async function sendMessage(text) {
+    const input = document.getElementById("user-input");
+    const message = text || input.value.trim();
+    if (!message) return;
+
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+
+    input.value = "";
+    input.style.height = "auto";
+    document.getElementById("btn-send").disabled = true;
+
+    appendBubble("user", message);
+    const typingEl = appendTyping();
+
+    try {
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message })
       });
+      const data = await res.json();
+      typingEl.remove();
 
-      // ------------------------------------------------------------------
-      // Điểm → badge
-      // ------------------------------------------------------------------
-      document
-        .getElementById("diem_thi")
-        .addEventListener("input", function () {
-          const badge = document.getElementById("score-badge");
-          const v = parseFloat(this.value);
-          if (!isNaN(v) && v >= 0 && v <= 30) {
-            badge.textContent = v.toFixed(2) + " đ";
-            badge.style.background =
-              v >= 27 ? "#057a55" : v >= 24 ? "#1a56db" : "#c27803";
-          } else {
-            badge.textContent = "—";
-            badge.style.background = "#1a56db";
-          }
-        });
-
-      // ------------------------------------------------------------------
-      // Toggle school selection
-      // ------------------------------------------------------------------
-      function toggleSchool(ma, ten, checked) {
-        if (checked) selectedSchools.add(ma);
-        else selectedSchools.delete(ma);
-        renderTags();
+      if (!res.ok || data.error) {
+        appendBubble("bot", "Lỗi: " + (data.error || "Không xác định"));
+      } else {
+        sessionId = data.session_id;
+        appendBubble("bot", data.reply);
+        updateContextPills(data.context || {});
       }
+    } catch (e) {
+      typingEl.remove();
+      appendBubble("bot", "Không kết nối được server. Đảm bảo `python web/app.py` đang chạy.");
+    } finally {
+      document.getElementById("btn-send").disabled = false;
+      input.focus();
+    }
+  }
 
-      function renderTags() {
-        const container = document.getElementById("selected-tags");
-        container.innerHTML = "";
-        selectedSchools.forEach((ma) => {
-          const school = schoolsData.find((s) => s.ma === ma);
-          const ten = school ? school.ten : ma;
-          const tag = document.createElement("span");
-          tag.className = "tag";
-          tag.innerHTML = `${ten} <button onclick="removeTag('${ma}')">×</button>`;
-          container.appendChild(tag);
-        });
-      }
+  function appendBubble(role, text) {
+    const container = document.getElementById("chat-container");
+    const div = document.createElement("div");
+    div.className = `message ${role}`;
 
-      function removeTag(ma) {
-        selectedSchools.delete(ma);
-        renderTags();
-        // Uncheck trong danh sách
-        const cb = document.querySelector(
-          `input[type=checkbox][value="${ma}"]`,
-        );
-        if (cb) cb.checked = false;
-      }
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = role === "user" ? "👤" : "🤖";
 
-      // ------------------------------------------------------------------
-      // Submit
-      // ------------------------------------------------------------------
-      async function submitForm() {
-        const toHop = document.getElementById("to_hop").value.trim();
-        const diemStr = document.getElementById("diem_thi").value.trim();
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = text
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
 
-        if (!toHop) {
-          alert("Vui lòng chọn tổ hợp xét tuyển.");
-          return;
-        }
-        if (!diemStr) {
-          alert("Vui lòng nhập điểm thi.");
-          return;
-        }
-        const diem = parseFloat(diemStr);
-        if (isNaN(diem) || diem < 0 || diem > 30) {
-          alert("Điểm thi phải từ 0 đến 30.");
-          return;
-        }
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
 
-        setStatus(
-          "loading",
-          "🔄 Agent đang xử lý — có thể mất 30–60 giây với model local...",
-        );
-        document.getElementById("btn-submit").disabled = true;
-        document.getElementById("answer-card").classList.remove("visible");
+  function appendTyping() {
+    const container = document.getElementById("chat-container");
+    const div = document.createElement("div");
+    div.className = "message bot typing";
+    div.innerHTML = `
+      <div class="avatar">🤖</div>
+      <div class="bubble">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
 
-        try {
-          const res = await fetch(`${API}/advise`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to_hop: toHop,
-              diem_thi: diem,
-              danh_sach_truong: [...selectedSchools],
-            }),
-          });
+  function updateContextPills(ctx) {
+    const c = document.getElementById("ctx-pills");
+    c.innerHTML = "";
+    if (ctx.diem_thi)              c.innerHTML += `<span class="pill">📊 ${ctx.diem_thi} điểm</span>`;
+    if (ctx.to_hop)                c.innerHTML += `<span class="pill">📚 ${ctx.to_hop}</span>`;
+    if (ctx.truong_quan_tam?.length) c.innerHTML += `<span class="pill">🏫 ${ctx.truong_quan_tam.length} trường</span>`;
+    if (ctx.nganh_quan_tam?.length)  c.innerHTML += `<span class="pill">🎓 ${ctx.nganh_quan_tam.length} ngành</span>`;
+  }
 
-          const data = await res.json();
-
-          if (!res.ok || data.error) {
-            setStatus("error", "❌ Lỗi: " + (data.error || "Không xác định"));
-            return;
-          }
-
-          setStatus(
-            "done",
-            `✅ Tư vấn hoàn thành — tổ hợp ${toHop}, điểm ${diem}`,
-          );
-          showAnswer(data.answer, data.query);
-        } catch (e) {
-          setStatus("error", "❌ Không kết nối được server: " + e.message);
-        } finally {
-          document.getElementById("btn-submit").disabled = false;
-        }
-      }
-
-      function setStatus(type, msg) {
-        const box = document.getElementById("status-box");
-        box.className = `status-box ${type}`;
-        if (type === "loading") {
-          box.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
-        } else {
-          box.innerHTML = `<span>${msg}</span>`;
-        }
-      }
-
-      function showAnswer(answer, query) {
-        const card = document.getElementById("answer-card");
-        const body = document.getElementById("answer-body");
-        const trace = document.getElementById("trace-box");
-
-        // Render markdown-lite: **bold**
-        const html = answer
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\n/g, "<br>");
-        body.innerHTML = html;
-        trace.textContent = `Câu hỏi gửi agent:\n${query}`;
-        trace.classList.remove("visible");
-
-        card.classList.add("visible");
-        card.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-
-      function toggleTrace() {
-        document.getElementById("trace-box").classList.toggle("visible");
-      }
-
-      // ------------------------------------------------------------------
-      // Boot
-      // ------------------------------------------------------------------
-      init();
-    </script>
-  </body>
+  initSession();
+  document.getElementById("user-input").focus();
+</script>
+</body>
 </html>

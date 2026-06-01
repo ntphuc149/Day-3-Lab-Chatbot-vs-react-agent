@@ -131,6 +131,75 @@ def filter_programs_by_schools(to_hop: str, diem_thi: float, danh_sach_truong: L
     }, ensure_ascii=False)
 
 
+def suggest_top_programs(to_hop: str, diem_thi: float, top_n: int = 5,
+                         nganh_quan_tam: List[str] = None, phuong_thuc: str = "THPT") -> str:
+    """
+    Gợi ý top N ngành/trường phù hợp nhất khi người dùng chưa có trường cụ thể.
+    Ưu tiên: (1) an toàn vừa phải (chênh lệch 0.5–3 điểm), (2) khớp ngành quan tâm nếu có.
+    Args:
+        to_hop: Mã tổ hợp xét tuyển
+        diem_thi: Điểm thi THPT của người dùng
+        top_n: Số lượng gợi ý trả về (mặc định 5)
+        nganh_quan_tam: Danh sách từ khóa ngành quan tâm để ưu tiên, [] nếu không có
+        phuong_thuc: Phương thức xét tuyển, mặc định là THPT
+    Returns:
+        Top N ngành gợi ý dạng chuỗi JSON.
+    """
+    records = _load_diem_chuan()
+    to_hop = to_hop.strip().upper()
+    nganh_keywords = [n.strip().lower() for n in (nganh_quan_tam or [])]
+    candidates = []
+
+    for r in records:
+        if r.get("phuong_thuc") != phuong_thuc:
+            continue
+        if to_hop not in r.get("to_hop", []):
+            continue
+        diem_chuan = r.get("diem_chuan_2024", 999)
+        chenh_lech = round(diem_thi - diem_chuan, 2)
+        if chenh_lech < 0:
+            continue
+
+        # Tính điểm ưu tiên: thích khoảng an toàn vừa (0.5–3đ), không quá dễ
+        safety_score = chenh_lech if chenh_lech <= 3 else max(0, 6 - chenh_lech)
+
+        # Cộng thêm điểm nếu khớp ngành quan tâm
+        nganh_lower = r["ten_nganh"].lower()
+        nganh_bonus = 5 if any(k in nganh_lower for k in nganh_keywords) else 0
+
+        candidates.append({
+            "truong": r["ten_truong"],
+            "ma_truong": r["ma_truong"],
+            "nganh": r["ten_nganh"],
+            "diem_chuan_2024": diem_chuan,
+            "chenh_lech": chenh_lech,
+            "kha_nang": "An toàn" if chenh_lech >= 1 else "Vừa đủ",
+            "_score": safety_score + nganh_bonus,
+        })
+
+    if not candidates:
+        return json.dumps({
+            "status": "not_found",
+            "message": f"Không tìm thấy ngành nào phù hợp với tổ hợp {to_hop} và điểm {diem_thi}.",
+            "results": []
+        }, ensure_ascii=False)
+
+    candidates.sort(key=lambda x: x["_score"], reverse=True)
+    top = candidates[:top_n]
+    for r in top:
+        del r["_score"]
+
+    return json.dumps({
+        "status": "ok",
+        "total_eligible": len(candidates),
+        "top_n": top_n,
+        "to_hop": to_hop,
+        "diem_thi": diem_thi,
+        "note": "Đây là gợi ý khi chưa có trường cụ thể. Ưu tiên ngành an toàn và khớp sở thích.",
+        "results": top
+    }, ensure_ascii=False)
+
+
 # Tool registry dùng cho ReAct agent
 ADMISSION_TOOLS = [
     {
@@ -145,7 +214,12 @@ ADMISSION_TOOLS = [
     },
     {
         "name": "filter_programs_by_schools",
-"description": "Lọc các ngành phù hợp theo danh sách trường mà người dùng quan tâm. Input: to_hop (string), diem_thi (float), danh_sach_truong (list of string), phuong_thuc (string, mặc định 'THPT').",
+        "description": "Lọc các ngành phù hợp theo danh sách trường mà người dùng quan tâm. Input: to_hop (string), diem_thi (float), danh_sach_truong (list of string), phuong_thuc (string, mặc định 'THPT').",
         "func": lambda args: filter_programs_by_schools(**args) if isinstance(args, dict) else "Cần truyền dict arguments.",
+    },
+    {
+        "name": "suggest_top_programs",
+        "description": "Gợi ý top 5 ngành/trường phù hợp nhất khi người dùng CHƯA có trường cụ thể. Ưu tiên ngành an toàn và khớp sở thích. Input: to_hop (string), diem_thi (float), nganh_quan_tam (list of string, [] nếu không có), top_n (int, mặc định 5).",
+        "func": lambda args: suggest_top_programs(**args) if isinstance(args, dict) else "Cần truyền dict arguments.",
     },
 ]

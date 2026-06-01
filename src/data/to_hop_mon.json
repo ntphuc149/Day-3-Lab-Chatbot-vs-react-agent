@@ -1,0 +1,14 @@
+{
+  "A00": ["Toán", "Vật lý", "Hóa học"],
+  "A01": ["Toán", "Vật lý", "Tiếng Anh"],
+  "A02": ["Toán", "Vật lý", "Sinh học"],
+  "B00": ["Toán", "Hóa học", "Sinh học"],
+  "B08": ["Toán", "Sinh học", "Tiếng Anh"],
+  "C00": ["Ngữ văn", "Lịch sử", "Địa lý"],
+  "D01": ["Toán", "Ngữ văn", "Tiếng Anh"],
+  "D07": ["Toán", "Hóa học", "Tiếng Anh"],
+  "D09": ["Toán", "Lịch sử", "Tiếng Anh"],
+  "D10": ["Toán", "Địa lý", "Tiếng Anh"],
+  "D14": ["Ngữ văn", "Lịch sử", "Tiếng Anh"],
+  "D15": ["Ngữ văn", "Địa lý", "Tiếng Anh"]
+}

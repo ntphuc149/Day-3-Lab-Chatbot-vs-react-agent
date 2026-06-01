@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tư vấn Tuyển sinh ĐH — AI Agent</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --primary: #1a56db;
+        --primary-dark: #1240a8;
+        --success: #057a55;
+        --warning: #c27803;
+        --danger: #c81e1e;
+        --bg: #f3f4f6;
+        --card: #ffffff;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --radius: 12px;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      /* ---- Header ---- */
+      header {
+        background: linear-gradient(135deg, #1a56db 0%, #0e3fa6 100%);
+        color: #fff;
+        padding: 20px 32px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+      }
+      header .logo {
+        font-size: 2rem;
+      }
+      header h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+      header p {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        margin-top: 2px;
+      }
+
+      /* ---- Layout ---- */
+      .layout {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      /* ---- Card ---- */
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+        padding: 24px;
+      }
+      .card h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ---- Form ---- */
+      .form-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #374151;
+      }
+      select,
+      input[type="number"] {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      select:focus,
+      input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+      }
+
+      .score-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-row input {
+        flex: 1;
+      }
+      .score-badge {
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        padding: 6px 11px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      /* subjects hint */
+      .subjects-hint {
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        background: #f9fafb;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        min-height: 28px;
+      }
+
+      /* School multiselect */
+      .school-list {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 8px;
+      }
+      .school-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s;
+        font-size: 0.88rem;
+      }
+      .school-item:hover {
+        background: #eff6ff;
+      }
+      .school-item input[type="checkbox"] {
+        accent-color: var(--primary);
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+      }
+      .school-item .ma {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin-left: auto;
+      }
+
+      .school-search {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        outline: none;
+      }
+      .school-search:focus {
+        border-color: var(--primary);
+      }
+
+      .selected-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 24px;
+        margin-top: 8px;
+      }
+      .tag {
+        background: #dbeafe;
+        color: var(--primary-dark);
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .tag button {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.9rem;
+        line-height: 1;
+        padding: 0 1px;
+      }
+
+      /* ---- Submit ---- */
+      .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          transform 0.1s;
+        margin-top: 4px;
+      }
+      .btn-submit:hover {
+        background: var(--primary-dark);
+      }
+      .btn-submit:active {
+        transform: scale(0.98);
+      }
+      .btn-submit:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* ---- Result panel ---- */
+      .result-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .status-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .status-box.idle {
+        background: #f3f4f6;
+        color: var(--muted);
+      }
+      .status-box.loading {
+        background: #eff6ff;
+        color: var(--primary);
+      }
+      .status-box.error {
+        background: #fef2f2;
+        color: var(--danger);
+      }
+      .status-box.done {
+        background: #ecfdf5;
+        color: var(--success);
+      }
+
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid #bfdbfe;
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* ---- Answer card ---- */
+      .answer-card {
+        display: none;
+      }
+      .answer-card.visible {
+        display: block;
+      }
+
+      .answer-body {
+        font-size: 0.92rem;
+        line-height: 1.75;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text);
+      }
+
+      /* Markdown-like rendering */
+      .answer-body strong {
+        color: #111;
+      }
+
+      /* ---- Steps trace ---- */
+      .trace-toggle {
+        background: none;
+        border: none;
+        color: var(--primary);
+        font-size: 0.82rem;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+      }
+      .trace-box {
+        display: none;
+        background: #1e293b;
+        color: #94a3b8;
+        border-radius: 8px;
+        padding: 14px;
+        font-family: "Consolas", monospace;
+        font-size: 0.78rem;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .trace-box.visible {
+        display: block;
+      }
+
+      /* ---- Responsive ---- */
+      @media (max-width: 768px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">🎓</div>
+      <div>
+        <h1>Tư vấn Tuyển sinh Đại học</h1>
+        <p>Powered by ReAct AI Agent · Dữ liệu điểm chuẩn 2024</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- ===== LEFT: Input form ===== -->
+      <div class="card">
+        <h2>📋 Thông tin xét tuyển</h2>
+
+        <div class="form-group">
+          <label for="to_hop">Tổ hợp xét tuyển</label>
+          <select id="to_hop">
+            <option value="">-- Chọn tổ hợp --</option>
+          </select>
+          <div class="subjects-hint" id="subjects-hint">
+            Chọn tổ hợp để xem các môn thi
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="diem_thi">Điểm thi THPT (thang 30)</label>
+          <div class="score-row">
+            <input
+              type="number"
+              id="diem_thi"
+              min="0"
+              max="30"
+              step="0.05"
+              placeholder="Ví dụ: 26.5"
+            />
+            <span class="score-badge" id="score-badge">—</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label
+            >Trường quan tâm
+            <span style="font-weight: 400; color: var(--muted)"
+              >(bỏ trống = tìm tất cả)</span
+            ></label
+          >
+          <input
+            class="school-search"
+            id="school-search"
+            type="text"
+            placeholder="Tìm kiếm trường..."
+          />
+          <div class="school-list" id="school-list">
+            <div style="color: var(--muted); font-size: 0.85rem; padding: 6px">
+              Đang tải danh sách trường...
+            </div>
+          </div>
+          <div class="selected-tags" id="selected-tags"></div>
+        </div>
+
+        <button class="btn-submit" id="btn-submit" onclick="submitForm()">
+          🔍 Phân tích nguyện vọng
+        </button>
+      </div>
+
+      <!-- ===== RIGHT: Result ===== -->
+      <div class="result-panel">
+        <div class="status-box idle" id="status-box">
+          <span>💡</span>
+          <span>Nhập thông tin bên trái và nhấn "Phân tích nguyện vọng"</span>
+        </div>
+
+        <div class="card answer-card" id="answer-card">
+          <h2>🤖 Kết quả tư vấn từ AI Agent</h2>
+          <div class="answer-body" id="answer-body"></div>
+          <div style="margin-top: 12px">
+            <button class="trace-toggle" onclick="toggleTrace()">
+              Xem chi tiết câu hỏi gửi lên agent ▼
+            </button>
+            <div class="trace-box" id="trace-box"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "http://localhost:5000/api";
+      let schoolsData = [];
+      let selectedSchools = new Set();
+      let toHopData = {};
+
+      // ------------------------------------------------------------------
+      // Init: load dữ liệu
+      // ------------------------------------------------------------------
+      async function init() {
+        try {
+          const [schoolsRes, toHopRes] = await Promise.all([
+            fetch(`${API}/schools`),
+            fetch(`${API}/to_hop`),
+          ]);
+          schoolsData = await schoolsRes.json();
+          toHopData = await toHopRes.json();
+          renderSchools(schoolsData);
+          renderToHopSelect();
+        } catch (e) {
+          document.getElementById("school-list").innerHTML =
+            `<div style="color:var(--danger);font-size:.85rem;padding:6px">Lỗi kết nối server: ${e.message}</div>`;
+        }
+      }
+
+      function renderToHopSelect() {
+        const sel = document.getElementById("to_hop");
+        for (const [ma, mons] of Object.entries(toHopData)) {
+          const opt = document.createElement("option");
+          opt.value = ma;
+          opt.textContent = `${ma} — ${mons.join(", ")}`;
+          sel.appendChild(opt);
+        }
+      }
+
+      function renderSchools(list) {
+        const container = document.getElementById("school-list");
+        container.innerHTML = "";
+        if (!list.length) {
+          container.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:6px">Không có trường nào</div>`;
+          return;
+        }
+        list.forEach((s) => {
+          const item = document.createElement("label");
+          item.className = "school-item";
+          item.innerHTML = `
+        <input type="checkbox" value="${s.ma}" onchange="toggleSchool('${s.ma}','${s.ten.replace(/'/g, "\\'")}',this.checked)" ${selectedSchools.has(s.ma) ? "checked" : ""} />
+        <span>${s.ten}</span>
+        <span class="ma">${s.ma}</span>`;
+          container.appendChild(item);
+        });
+      }
+
+      // ------------------------------------------------------------------
+      // School search filter
+      // ------------------------------------------------------------------
+      document
+        .getElementById("school-search")
+        .addEventListener("input", function () {
+          const q = this.value.toLowerCase();
+          const filtered = schoolsData.filter(
+            (s) =>
+              s.ten.toLowerCase().includes(q) || s.ma.toLowerCase().includes(q),
+          );
+          renderSchools(filtered);
+        });
+
+      // ------------------------------------------------------------------
+      // Tổ hợp → hiển thị môn thi
+      // ------------------------------------------------------------------
+      document.getElementById("to_hop").addEventListener("change", function () {
+        const hint = document.getElementById("subjects-hint");
+        const ma = this.value;
+        if (ma && toHopData[ma]) {
+          hint.textContent = `Môn thi: ${toHopData[ma].join(" · ")}`;
+          hint.style.color = "#1a56db";
+        } else {
+          hint.textContent = "Chọn tổ hợp để xem các môn thi";
+          hint.style.color = "";
+        }
+      });
+
+      // ------------------------------------------------------------------
+      // Điểm → badge
+      // ------------------------------------------------------------------
+      document
+        .getElementById("diem_thi")
+        .addEventListener("input", function () {
+          const badge = document.getElementById("score-badge");
+          const v = parseFloat(this.value);
+          if (!isNaN(v) && v >= 0 && v <= 30) {
+            badge.textContent = v.toFixed(2) + " đ";
+            badge.style.background =
+              v >= 27 ? "#057a55" : v >= 24 ? "#1a56db" : "#c27803";
+          } else {
+            badge.textContent = "—";
+            badge.style.background = "#1a56db";
+          }
+        });
+
+      // ------------------------------------------------------------------
+      // Toggle school selection
+      // ------------------------------------------------------------------
+      function toggleSchool(ma, ten, checked) {
+        if (checked) selectedSchools.add(ma);
+        else selectedSchools.delete(ma);
+        renderTags();
+      }
+
+      function renderTags() {
+        const container = document.getElementById("selected-tags");
+        container.innerHTML = "";
+        selectedSchools.forEach((ma) => {
+          const school = schoolsData.find((s) => s.ma === ma);
+          const ten = school ? school.ten : ma;
+          const tag = document.createElement("span");
+          tag.className = "tag";
+          tag.innerHTML = `${ten} <button onclick="removeTag('${ma}')">×</button>`;
+          container.appendChild(tag);
+        });
+      }
+
+      function removeTag(ma) {
+        selectedSchools.delete(ma);
+        renderTags();
+        // Uncheck trong danh sách
+        const cb = document.querySelector(
+          `input[type=checkbox][value="${ma}"]`,
+        );
+        if (cb) cb.checked = false;
+      }
+
+      // ------------------------------------------------------------------
+      // Submit
+      // ------------------------------------------------------------------
+      async function submitForm() {
+        const toHop = document.getElementById("to_hop").value.trim();
+        const diemStr = document.getElementById("diem_thi").value.trim();
+
+        if (!toHop) {
+          alert("Vui lòng chọn tổ hợp xét tuyển.");
+          return;
+        }
+        if (!diemStr) {
+          alert("Vui lòng nhập điểm thi.");
+          return;
+        }
+        const diem = parseFloat(diemStr);
+        if (isNaN(diem) || diem < 0 || diem > 30) {
+          alert("Điểm thi phải từ 0 đến 30.");
+          return;
+        }
+
+        setStatus(
+          "loading",
+          "🔄 Agent đang xử lý — có thể mất 30–60 giây với model local...",
+        );
+        document.getElementById("btn-submit").disabled = true;
+        document.getElementById("answer-card").classList.remove("visible");
+
+        try {
+          const res = await fetch(`${API}/advise`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to_hop: toHop,
+              diem_thi: diem,
+              danh_sach_truong: [...selectedSchools],
+            }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            setStatus("error", "❌ Lỗi: " + (data.error || "Không xác định"));
+            return;
+          }
+
+          setStatus(
+            "done",
+            `✅ Tư vấn hoàn thành — tổ hợp ${toHop}, điểm ${diem}`,
+          );
+          showAnswer(data.answer, data.query);
+        } catch (e) {
+          setStatus("error", "❌ Không kết nối được server: " + e.message);
+        } finally {
+          document.getElementById("btn-submit").disabled = false;
+        }
+      }
+
+      function setStatus(type, msg) {
+        const box = document.getElementById("status-box");
+        box.className = `status-box ${type}`;
+        if (type === "loading") {
+          box.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+        } else {
+          box.innerHTML = `<span>${msg}</span>`;
+        }
+      }
+
+      function showAnswer(answer, query) {
+        const card = document.getElementById("answer-card");
+        const body = document.getElementById("answer-body");
+        const trace = document.getElementById("trace-box");
+
+        // Render markdown-lite: **bold**
+        const html = answer
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\n/g, "<br>");
+        body.innerHTML = html;
+        trace.textContent = `Câu hỏi gửi agent:\n${query}`;
+        trace.classList.remove("visible");
+
+        card.classList.add("visible");
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function toggleTrace() {
+        document.getElementById("trace-box").classList.toggle("visible");
+      }
+
+      // ------------------------------------------------------------------
+      // Boot
+      // ------------------------------------------------------------------
+      init();
+    </script>
+  </body>
+</html>

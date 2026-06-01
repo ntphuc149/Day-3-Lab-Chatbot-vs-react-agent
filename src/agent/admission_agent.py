@@ -241,12 +241,23 @@ class AdmissionReActAgent:
             if thought_match:
                 logger.log_event("THOUGHT", {"step": steps + 1, "thought": thought_match.group(1).strip()})
 
-            if "Final Answer:" in response_text:
+            # Cắt bỏ mọi thứ từ "Observation:" trở đi nếu LLM tự bịa
+            # (chỉ giữ phần Thought + Action do LLM sinh ra)
+            if "\nObservation:" in response_text:
+                response_text = response_text.split("\nObservation:")[0]
+                logger.log_event("HALLUCINATED_OBSERVATION", {
+                    "step": steps + 1,
+                    "detail": "LLM tự viết Observation — đã cắt bỏ, chỉ giữ Thought+Action",
+                })
+
+            # Final Answer chỉ hợp lệ khi KHÔNG có Action trong cùng response
+            if "Final Answer:" in response_text and "Action:" not in response_text:
                 final = response_text.split("Final Answer:", 1)[1].strip()
                 logger.log_event("AGENT_END", {"steps": steps + 1, "usage": total_usage, "status": "success"})
                 return final
 
-            action_match = re.search(r"Action:\s*(\w+)\((.+?)\)\s*$", response_text, re.MULTILINE | re.DOTALL)
+            # Regex chặt hơn: chỉ lấy đến hết dòng Action, không dùng DOTALL
+            action_match = re.search(r"Action:\s*(\w+)\((\{.*?\})\)", response_text, re.DOTALL)
             if not action_match:
                 logger.log_event("PARSE_ERROR", {
                     "step": steps + 1,
@@ -304,9 +315,10 @@ Bạn có quyền truy cập các công cụ sau để tra cứu thông tin:
 Quy tắc bắt buộc:
 1. Luôn suy nghĩ trước khi hành động (Thought).
 2. Gọi đúng 1 công cụ mỗi bước (Action).
-3. Đọc kết quả công cụ (Observation) rồi tiếp tục suy nghĩ.
-4. Khi đã có đủ thông tin, đưa ra Final Answer chi tiết bằng tiếng Việt.
-5. KHÔNG được bịa số liệu — chỉ dùng dữ liệu từ Observation.
+3. TUYỆT ĐỐI KHÔNG tự viết "Observation:" — hệ thống sẽ điền vào sau khi chạy tool.
+4. Mỗi lượt chỉ được viết Thought + Action, rồi DỪNG LẠI, chờ Observation từ hệ thống.
+5. Chỉ viết Final Answer sau khi đã có Observation thật từ hệ thống.
+6. KHÔNG được bịa số liệu, tên trường, điểm chuẩn — chỉ dùng dữ liệu từ Observation.
 
 Định dạng bắt buộc:
 

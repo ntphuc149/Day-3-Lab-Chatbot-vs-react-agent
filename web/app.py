@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import uuid
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -9,7 +10,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 from src.agent.admission_agent import AdmissionReActAgent
-# from src.core.local_provider import LocalProvider
 from src.core.openai_provider import OpenAIProvider
 
 load_dotenv()
@@ -18,7 +18,12 @@ app = Flask(__name__, static_folder=".")
 CORS(app)
 
 # ------------------------------------------------------------------
-# Khởi tạo LLM provider (lazy — chỉ load khi có request đầu tiên)
+# Session store: { session_id: { context: {}, history: [] } }
+# ------------------------------------------------------------------
+_sessions: dict = {}
+
+# ------------------------------------------------------------------
+# Agent (lazy init)
 # ------------------------------------------------------------------
 _agent: AdmissionReActAgent = None
 
@@ -26,14 +31,14 @@ def get_agent() -> AdmissionReActAgent:
     global _agent
     if _agent is None:
         api_key = os.getenv("OPENAI_API_KEY")
-        model = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+        model = os.getenv("DEFAULT_MODEL", "gpt-4o")
         llm = OpenAIProvider(model_name=model, api_key=api_key)
         _agent = AdmissionReActAgent(llm=llm, max_steps=6)
     return _agent
 
 
 # ------------------------------------------------------------------
-# Helper: đọc danh sách trường từ diem_chuan.json
+# Helpers
 # ------------------------------------------------------------------
 def _load_schools():
     data_path = os.path.join(os.path.dirname(__file__), "..", "data", "diem_chuan.json")
@@ -72,46 +77,46 @@ def get_to_hop():
     return jsonify(_load_to_hop())
 
 
-@app.route("/api/advise", methods=["POST"])
-def advise():
+@app.route("/api/session/new", methods=["POST"])
+def new_session():
+    session_id = str(uuid.uuid4())
+    _sessions[session_id] = {"context": {}, "history": []}
+    return jsonify({"session_id": session_id})
+
+
+@app.route("/api/session/<session_id>/reset", methods=["POST"])
+def reset_session(session_id: str):
+    _sessions[session_id] = {"context": {}, "history": []}
+    return jsonify({"ok": True})
+
+
+@app.route("/api/chat", methods=["POST"])
+def chat():
     body = request.get_json()
     if not body:
         return jsonify({"error": "Request body trống"}), 400
 
-    to_hop: str = body.get("to_hop", "").strip().upper()
-    diem_thi = body.get("diem_thi")
-    danh_sach_truong: list = body.get("danh_sach_truong", [])
+    session_id = body.get("session_id", "").strip()
+    message = body.get("message", "").strip()
 
-    if not to_hop:
-        return jsonify({"error": "Thiếu tổ hợp xét tuyển"}), 400
-    if diem_thi is None:
-        return jsonify({"error": "Thiếu điểm thi"}), 400
-    try:
-        diem_thi = float(diem_thi)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Điểm thi không hợp lệ"}), 400
-    if not (0 <= diem_thi <= 30):
-        return jsonify({"error": "Điểm thi phải trong khoảng 0–30"}), 400
+    if not message:
+        return jsonify({"error": "Tin nhắn trống"}), 400
 
-    # Xây dựng câu hỏi cho agent
-    if danh_sach_truong:
-        ten_truong_list = ", ".join(danh_sach_truong)
-        user_query = (
-            f"Tôi thi tổ hợp {to_hop} được {diem_thi} điểm (thang 30). "
-            f"Tôi quan tâm đến các trường sau: {ten_truong_list}. "
-            f"Hãy lọc các ngành phù hợp tại các trường đó, phân tích khả năng đậu và đưa ra lời khuyên sắp xếp nguyện vọng."
-        )
-    else:
-        user_query = (
-            f"Tôi thi tổ hợp {to_hop} được {diem_thi} điểm (thang 30). "
-            f"Hãy tìm tất cả ngành/trường phù hợp với điểm của tôi, "
-            f"phân tích và đưa ra lời khuyên sắp xếp nguyện vọng hợp lý."
-        )
+    # Tạo session mới nếu chưa có
+    if not session_id or session_id not in _sessions:
+        session_id = str(uuid.uuid4())
+        _sessions[session_id] = {"context": {}, "history": []}
+
+    session = _sessions[session_id]
 
     try:
         agent = get_agent()
-        answer = agent.run(user_query)
-        return jsonify({"answer": answer, "query": user_query})
+        reply = agent.chat(message, session)
+        return jsonify({
+            "session_id": session_id,
+            "reply": reply,
+            "context": session["context"],
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
